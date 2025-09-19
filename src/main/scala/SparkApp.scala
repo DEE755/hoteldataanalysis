@@ -50,7 +50,7 @@ import org.apache.spark.sql.DataFrame
       }*/
 
 
-
+////
 
 println("\nNow let's calculate the percentage of null values in each column:")
       statisticsFunctions.getNullPercentages(df).show()
@@ -69,8 +69,25 @@ println("\nNow let's calculate the percentage of null values in each column:")
 
 
 
-      cancellationInvestigation.investigate(dfCleaned)
+      println("Cancellation Investigations\n We would like to understand which are the main factors that lead to a booking cancellation.\n")
 
+
+      println("We can start by looking at the time between the date a reservation is made and the date the reservation is for :\n" +
+        "this is on our dataset the column lead_time and it is expressed in days.\n")
+
+      df.select("lead_time").describe().show()
+
+
+      println("We want to investigate further the lead_time column, so we can look at its distribution:\n" +
+        "we will create bins of several days and count the number of bookings in each bin.\n")
+
+        val dfWithBuckets=cancellationInvestigation.makeBuckets(dfCleaned)
+
+
+      println("We can now look at the cancellation rate per bucket:\n")
+      val cancelRatePerBucket=cancellationInvestigation.cancelRatePerBuckets(dfWithBuckets)
+
+      cancelRatePerBucket.show()
 
 
 
