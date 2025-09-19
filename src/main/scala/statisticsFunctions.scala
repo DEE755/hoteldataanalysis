@@ -1,10 +1,18 @@
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{col, count, when, lit}
 
-
+/**
+ * Object containing utility functions for statistical analysis of Spark DataFrames.
+ */
 object statisticsFunctions {
 
-
+  /**
+   * Detects the data types of columns in a DataFrame based on their values.
+   *
+   * @param df The input DataFrame.
+   * @return   An array of tuples where each tuple contains the column name and a set of detected types.
+   *           Possible types are "Boolean", "Integer", "Double", and "String".
+   */
   def detectTypes(df: DataFrame): Array[(String, Set[String])] = {
       df.columns.map { c =>
         val values = df.select(col(c))
@@ -12,7 +20,7 @@ object statisticsFunctions {
           .na.drop()
           .limit(1000)
           .collect()
-          .map(_.getString(0))
+          .map(_.get(0).toString)
           .toSet
 
         val types =
@@ -25,6 +33,12 @@ object statisticsFunctions {
       }
     }
 
+  /**
+   * Calculates the percentage of null values for each column in a DataFrame.
+   *
+   * @param df The input DataFrame.
+   * @return   A DataFrame where each column represents the percentage of null values for the corresponding column in the input DataFrame.
+   */
   def getNullPercentages(df: DataFrame): DataFrame = {
     val totalRows = df.count().toDouble
     df.select(df.columns.map { c =>
@@ -32,8 +46,13 @@ object statisticsFunctions {
     }: _*)
   }
 
-
-
+  /**
+   * Filters columns in a DataFrame based on a null value percentage threshold.
+   *
+   * @param df        The input DataFrame.
+   * @param threshold The threshold percentage for null values. Columns with a null percentage above this value will be included.
+   * @return          A DataFrame containing only the columns with null percentages above the specified threshold.
+   */
   def getNullAboveThreshold(df: DataFrame, threshold: Double): DataFrame = {
 
     val columnsAboveThreshold = df.columns.filter { c =>
@@ -42,8 +61,5 @@ object statisticsFunctions {
     }
     df.select(columnsAboveThreshold.map(col): _*)
   }
-
-
-
 
 }
