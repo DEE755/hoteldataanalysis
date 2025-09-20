@@ -3,8 +3,8 @@
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-import statisticsFunctions._
-import cancellationInvestigation._
+import StatisticsFunctions._
+import CancellationInvestigation._
 import ParsingUtils._
 
 import scala.Console.println
@@ -32,6 +32,7 @@ import scala.Console.println
       //df.describe().show()
 
 
+
       /*println("those are the detected types in the dataset:")
    statisticsFunctions.detectTypes(df)
       .flatMap(_._2)
@@ -53,20 +54,19 @@ import scala.Console.println
 
 
 println("\nNow let's calculate the percentage of null values in each column:")
-      statisticsFunctions.getNullPercentages(df).show()
+      StatisticsFunctions.getNullPercentages(df).show()
 
       println("\nLet's detect if there are column with more than 10% of missing values:")
 
-      val columnsAboveThreshold = statisticsFunctions.getNullAboveThreshold(df, 10.0)
+      val columnsAboveThreshold = StatisticsFunctions.getNullAboveThreshold(df, 10.0)
       println( s"${columnsAboveThreshold.count()} columns found having more than 10% missing\n")
 
       println("Let's check which they are and their percentage of null values:")
-      statisticsFunctions.getNullPercentages(columnsAboveThreshold).show()
+      StatisticsFunctions.getNullPercentages(columnsAboveThreshold).show()
 
       println("We can decide to drop those columns if we want:")
       val dfCleaned = df.drop(columnsAboveThreshold.columns:_*)
       println(s"Now the dataset has ${dfCleaned.columns.length} columns instead of ${df.columns.length}\n")
-
 
 
 
@@ -86,17 +86,17 @@ println("\nNow let's calculate the percentage of null values in each column:")
       println("We want to investigate further the lead_time column, so we can look at its distribution:\n" +
         "we will create bins of several days and count the number of bookings in each bin.\n")
 
-        val dfWithBuckets=cancellationInvestigation.lead_time.makeBuckets(dfCleaned)
+        val dfWithBuckets=CancellationInvestigation.lead_time.makeBuckets(dfCleaned)
 
 
       println("We can now look at the cancellation rate per bucket:\n" + "we will also save the result in a csv file.\n")
-      val cancelRatePerBucket=cancellationInvestigation.lead_time.cancelRatePerBuckets(dfWithBuckets)
+      val cancelRatePerBucket=CancellationInvestigation.lead_time.cancelRatePerBuckets(dfWithBuckets)
 
       //showing the result
       cancelRatePerBucket.show()
       // Saving the result as a csv file
       cancelRatePerBucket
-        .coalesce(1)//make it onluy one file
+        .coalesce(1)//make it only one file
         .write
         .mode("overwrite")//if it already exists overwrite
         .option("header", "true")//add header
@@ -109,42 +109,28 @@ println("\nNow let's calculate the percentage of null values in each column:")
       //Making a new column total_nights:
       println("We will look at the total number of nights per booking, which is the sum of weekend and week nights.\n")
       dfCleaned.select("stays_in_weekend_nights", "stays_in_week_nights").describe().show()
-      val dfWithTotalNights = cancellationInvestigation.total_nights.makeTotalNights(dfCleaned)
+
+      //creating the new column total_nights
+      val dfWithTotalNights = dfCleaned.withColumn("total_nights", col("stays_in_weekend_nights") + col("stays_in_week_nights"))
       dfWithTotalNights.select("total_nights").describe().show()
 
       //CREATING A DATASET[BOOKING] WITH ONLY THE COLUMNS WE NEED AND VALIDATING THE ROWS
       val ParseResult(validBookings, invalidRows) = toValidatedBookings(df)
 
-      // optional audit output
+      //if invalidRows is not empty we can save it to a file to check later
       println(s"Invalid rows: ${invalidRows.count()}")
       invalidRows.coalesce(1).write.mode("overwrite").text("output/audit_invalid_rows")
 
 
 
-
-
       //filtering bookings with lead time >= 90 days and total nights >= 4
-     val dsFiltered = cancellationInvestigation.total_nights.filterLongLeadsAndStays(validBookings, 90, 4)
+     val dsFiltered = CancellationInvestigation.total_nights.filterLongLeadsAndStays(validBookings, 90, 4)
 
       println("We filtered the dataset to keep only bookings with lead time >= 90 days and total nights >= 4:\n")
       dsFiltered.show(15)
       println("Now we can look at the cancellation rate for bookings with lead time >= 90 days and total nights >= 4:\n")
 
-      cancellationInvestigation.total_nights.cancelRateForLongLeadsAndStays(dsFiltered).show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      CancellationInvestigation.total_nights.cancelRateForLongLeadsAndStays(dsFiltered).show()
 
 
 

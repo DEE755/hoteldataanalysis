@@ -1,20 +1,11 @@
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.Dataset
-import scala.util.Try
+
 
 /**
  * Utility object for parsing and validating booking data from a DataFrame.
  */
 object ParsingUtils {
-
-  /**
-   * Case class representing the result of parsing: valid bookings and invalid rows.
-   *
-   * @param valid   Dataset of valid `Booking` objects.
-   * @param invalid Dataset of invalid rows as error messages.
-   */
-  final case class ParseResult(valid: Dataset[Booking], invalid: Dataset[String])
 
   /**
    * Case class representing a booking with essential fields.
@@ -24,6 +15,14 @@ object ParsingUtils {
    * @param total_nights Total number of nights for the booking.
    */
   final case class Booking(is_canceled: Int, lead_time: Int, total_nights: Int)
+
+  /**
+   * Case class representing the result of parsing: valid bookings and invalid rows.
+   *
+   * @param valid   Dataset of valid `Booking` objects.
+   * @param invalid Dataset of invalid rows as error messages.
+   */
+  final case class ParseResult(valid: Dataset[Booking], invalid: Dataset[String])
 
   /**
    * Converts a string to an integer, returning an `Either` with an error message or the parsed integer.
@@ -51,7 +50,7 @@ object ParsingUtils {
    * @param f  Function to combine the valid values.
    * @return   Combined validation result.
    */
-  def map2[A, B, C](va: V[A], vb: V[B])(f: (A, B) => C): V[C] =
+  def map2[A, B, C](va: V[A], vb: V[B])(f: (A, B) => C): V[C] = // pattern matching on both validation results
     (va, vb) match {
       case (Right(a), Right(b)) => Right(f(a, b))
       case (Left(e1), Right(_)) => Left(e1)

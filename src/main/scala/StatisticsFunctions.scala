@@ -1,10 +1,10 @@
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{col, count, when, lit}
 
-/**
- * Object containing utility functions for statistical analysis of Spark DataFrames.
- */
-object statisticsFunctions {
+
+
+object StatisticsFunctions extends StatsFunctions {
+
 
   /**
    * Detects the data types of columns in a DataFrame based on their values.
